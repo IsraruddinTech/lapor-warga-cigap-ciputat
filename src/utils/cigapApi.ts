@@ -46,18 +46,69 @@ async function parseErrorResponse(
   res: Response,
   fallbackMessage: string
 ): Promise<ApiHttpError> {
-  const errBody = (await res.json().catch(() => ({}))) as {
+  const contentType = (res.headers.get('content-type') || '').toLowerCase();
+  const rawText = await res.text().catch(() => '');
+
+  let errBody: {
     error?: string;
     retryAfterSeconds?: number;
     remainingAttempts?: number;
-  };
+  } = {};
+
+  if (rawText) {
+    try {
+      const parsed = JSON.parse(rawText);
+      if (parsed && typeof parsed === 'object') {
+        errBody = parsed as typeof errBody;
+      }
+    } catch {
+      // Response bukan JSON (mis. text/plain Vercel FUNCTION_INVOCATION_FAILED atau HTML)
+    }
+  }
+
   if (res.status === 401 || res.status === 403) {
     inMemoryCsrfToken = null;
   }
-  return new ApiHttpError(errBody.error || fallbackMessage, res.status, {
+
+  let resolvedMessage = errBody.error;
+  if (!resolvedMessage) {
+    if (res.status === 404) {
+      resolvedMessage =
+        'Endpoint API autentikasi petugas tidak ditemukan (404). Periksa konfigurasi routing API pada server.';
+    } else if (res.status === 503) {
+      resolvedMessage =
+        'Layanan autentikasi petugas tidak tersedia (503). Periksa environment variable server.';
+    } else if (res.status >= 500) {
+      if (rawText.includes('FUNCTION_INVOCATION_FAILED')) {
+        resolvedMessage =
+          'Serverless function autentikasi mengalami gangguan runtime (500 FUNCTION_INVOCATION_FAILED).';
+      } else {
+        resolvedMessage = `Server autentikasi mengalami gangguan internal (HTTP ${res.status}).`;
+      }
+    } else if (contentType.includes('text/html')) {
+      resolvedMessage = `Permintaan API mengembalikan HTML alih-alih JSON (HTTP ${res.status}). Periksa rewrite routing deployment.`;
+    } else {
+      resolvedMessage = fallbackMessage;
+    }
+  }
+
+  return new ApiHttpError(resolvedMessage, res.status, {
     retryAfterSeconds: errBody.retryAfterSeconds,
     remainingAttempts: errBody.remainingAttempts,
   });
+}
+
+async function parseJsonSuccess<T>(res: Response, invalidJsonMessage: string): Promise<T> {
+  const contentType = (res.headers.get('content-type') || '').toLowerCase();
+  const rawText = await res.text();
+  if (!contentType.includes('application/json')) {
+    throw new ApiHttpError(invalidJsonMessage, 502);
+  }
+  try {
+    return JSON.parse(rawText) as T;
+  } catch {
+    throw new ApiHttpError(invalidJsonMessage, 502);
+  }
 }
 
 export interface AdminSessionStatusResponse {
@@ -78,7 +129,10 @@ export async function loginAdminOnServer(
   if (!res.ok) {
     throw await parseErrorResponse(res, 'Verifikasi PIN petugas gagal.');
   }
-  const data = (await res.json()) as AdminSessionStatusResponse;
+  const data = await parseJsonSuccess<AdminSessionStatusResponse>(
+    res,
+    'Endpoint /api/admin/login tidak mengembalikan respons JSON yang valid (kemungkinan routing API mengarah ke index.html).'
+  );
   inMemoryCsrfToken = data.csrfToken || null;
   return data;
 }
@@ -89,6 +143,11 @@ export async function fetchAdminSession(): Promise<AdminSessionStatusResponse> {
     credentials: 'same-origin',
   });
   if (!res.ok) {
+    inMemoryCsrfToken = null;
+    return { authenticated: false };
+  }
+  const contentType = (res.headers.get('content-type') || '').toLowerCase();
+  if (!contentType.includes('application/json')) {
     inMemoryCsrfToken = null;
     return { authenticated: false };
   }

@@ -315,8 +315,13 @@ function buildAdminSessionCookieHeader(
   const maxAge = clear ? 0 : Math.floor(SESSION_TTL_MS / 1000);
   const attrs = ['HttpOnly', 'Path=/', `Max-Age=${maxAge}`];
   if (isHttps) {
-    // Cloud Run / AI Studio cross-site HTTPS iframe preview requires SameSite=None; Secure (+ Partitioned CHIPS)
-    attrs.push('Secure', 'SameSite=None', 'Partitioned');
+    if (IS_VERCEL) {
+      // Same-origin HTTPS deployment on Vercel: SameSite=Lax; Secure avoids third-party/CHIPS restrictions
+      attrs.push('Secure', 'SameSite=Lax');
+    } else {
+      // Cloud Run / AI Studio cross-site HTTPS iframe preview requires SameSite=None; Secure (+ Partitioned CHIPS)
+      attrs.push('Secure', 'SameSite=None', 'Partitioned');
+    }
   } else {
     // Local HTTP development: never set SameSite=None without Secure
     attrs.push('SameSite=Lax');
@@ -327,10 +332,37 @@ function buildAdminSessionCookieHeader(
 
 function getAllowedOrigins(req: Request): Set<string> {
   const allowed = new Set<string>();
+  const proto = isHttpsRequest(req) ? 'https' : 'http';
+
   const host = req.get('host');
   if (host) {
-    const proto = isHttpsRequest(req) ? 'https' : 'http';
-    allowed.add(`${proto}://${host}`);
+    allowed.add(`${proto}://${host.trim()}`);
+  }
+
+  const xfHost = req.header('x-forwarded-host');
+  if (typeof xfHost === 'string' && xfHost.trim() !== '') {
+    const firstHost = xfHost.split(',')[0].trim();
+    if (firstHost) {
+      allowed.add(`${proto}://${firstHost}`);
+    }
+  }
+
+  for (const vercelHost of [
+    process.env.VERCEL_URL,
+    process.env.VERCEL_BRANCH_URL,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+  ]) {
+    const trimmed = typeof vercelHost === 'string' ? vercelHost.trim() : '';
+    if (!trimmed) continue;
+    const candidate =
+      trimmed.startsWith('http://') || trimmed.startsWith('https://')
+        ? trimmed
+        : `https://${trimmed}`;
+    try {
+      allowed.add(new URL(candidate).origin);
+    } catch {
+      // ignore invalid URL entries
+    }
   }
 
   const extra = [process.env.APP_URL, ...(process.env.CIGAP_ALLOWED_ORIGINS || '').split(',')];
@@ -687,7 +719,15 @@ export function createCigapServerApp(): express.Express {
     if (!rawSessionId) return null;
 
     const sessionHash = hashSecretToken(rawSessionId);
-    const existing = adminSessions.get(sessionHash);
+    let existing = adminSessions.get(sessionHash);
+    if (!existing) {
+      const diskSessions = loadSessionsFromDisk();
+      const fromDisk = diskSessions.get(sessionHash);
+      if (fromDisk) {
+        adminSessions.set(sessionHash, fromDisk);
+        existing = fromDisk;
+      }
+    }
     if (!existing) return null;
 
     if (existing.expiresAtMs <= Date.now()) {
@@ -815,12 +855,19 @@ export function createCigapServerApp(): express.Express {
     if (!verification.configured) {
       console.error('Admin login rejected: CIGAP_ADMIN_PASSCODE environment variable is not configured.');
       res.status(503).json({
-        error: 'Layanan autentikasi petugas belum dikonfigurasi pada server.',
+        error: 'Layanan autentikasi petugas belum dikonfigurasi pada server (CIGAP_ADMIN_PASSCODE belum diset).',
       });
       return;
     }
 
-    if (!passcode || !verification.valid) {
+    if (!/^\d{6}$/.test(passcode)) {
+      res.status(400).json({
+        error: 'Format PIN petugas harus berupa 6 digit angka.',
+      });
+      return;
+    }
+
+    if (!verification.valid) {
       let failures = 1;
       let windowStartMs = now;
 
@@ -1580,6 +1627,37 @@ export function createCigapServerApp(): express.Express {
     }
   });
 
+  // Ensure unknown /api/* routes always return JSON 404 (never HTML fallback)
+  app.all('/api/*', (req: Request, res: Response) => {
+    res.status(404).json({
+      error: `Endpoint API ${req.method} ${req.path} tidak ditemukan.`,
+    });
+  });
+
+  // Ensure JSON parse / payload errors on /api/* return structured JSON
+  app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
+    if (!req.path.startsWith('/api')) {
+      next(err);
+      return;
+    }
+    const status =
+      typeof (err as { status?: number })?.status === 'number'
+        ? (err as { status: number }).status
+        : 500;
+    if (err instanceof SyntaxError && status === 400) {
+      res.status(400).json({ error: 'Format JSON permintaan tidak valid.' });
+      return;
+    }
+    if ((err as { type?: string })?.type === 'entity.too.large') {
+      res.status(413).json({ error: 'Ukuran payload melebihi batas server.' });
+      return;
+    }
+    console.error('Unhandled API error:', err);
+    res.status(status >= 400 ? status : 500).json({
+      error: 'Terjadi kesalahan internal pada server API.',
+    });
+  });
+
   return app;
 }
 
@@ -1587,8 +1665,9 @@ export async function startServer() {
   const app = createCigapServerApp();
 
   // Vite middleware in dev, static dist in production
-  if (process.env.NODE_ENV !== 'production') {
-    const { createServer: createViteServer } = await import('vite');
+  if (!IS_VERCEL && process.env.NODE_ENV !== 'production') {
+    const viteModuleName = 'vite';
+    const { createServer: createViteServer } = await import(viteModuleName);
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',

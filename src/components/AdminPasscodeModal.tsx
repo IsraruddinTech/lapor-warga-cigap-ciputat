@@ -168,6 +168,28 @@ export const AdminPasscodeModal: React.FC<AdminPasscodeModalProps> = ({
     }
   };
 
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    if (cooldownSeconds > 0 || isVerifying || isSuccess) return;
+    const pastedText = e.clipboardData.getData('text') || '';
+    const cleanVal = pastedText.replace(/\D/g, '');
+    if (!cleanVal) return;
+
+    e.preventDefault();
+    const sliced = cleanVal.slice(0, 6).split('');
+    const newDigits = ['', '', '', '', '', ''];
+    for (let i = 0; i < sliced.length; i++) {
+      newDigits[i] = sliced[i];
+    }
+    setDigits(newDigits);
+    setErrorMessage('');
+
+    if (sliced.length === 6) {
+      verifyPasscode(newDigits.join(''));
+    } else {
+      inputRefs.current[Math.min(sliced.length, 5)]?.focus();
+    }
+  };
+
   // Numpad klik
   const handleNumpadPress = (num: string) => {
     if (cooldownSeconds > 0 || isVerifying || isSuccess) return;
@@ -302,6 +324,7 @@ export const AdminPasscodeModal: React.FC<AdminPasscodeModalProps> = ({
                     disabled={cooldownSeconds > 0 || isVerifying || isSuccess}
                     onChange={(e) => handleInputChange(idx, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(idx, e)}
+                    onPaste={handlePaste}
                     className={`w-11 h-13 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-black rounded-2xl border-2 transition-all outline-none ${
                       isSuccess
                         ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
