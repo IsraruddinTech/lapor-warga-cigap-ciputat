@@ -1,0 +1,11 @@
+{
+  "name": "Remix Remix Remix Remix LaporWarga Ciputat - CIGAP",
+  "description": "Sistem Pengaduan dan Pelaporan Keluhan Masyarakat Ciputat interaktif, ramah lansia \u0026 muda dengan tracking status, cuaca lokal, dan customer service.",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
