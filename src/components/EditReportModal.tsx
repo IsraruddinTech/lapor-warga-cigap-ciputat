@@ -19,7 +19,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { ReportItem, ReportCategory, KelurahanCiputat, UrgencyLevel, ThemeAccent, ReportPhoto } from '../types';
-import { CIPUTAT_KELURAHAN_LIST, CATEGORY_LABELS, STATUS_LABELS } from '../data/mockReports';
+import { CIPUTAT_KELURAHAN_LIST, CATEGORY_LABELS, STATUS_LABELS } from '../data/cigapConstants';
 import { getThemeColors } from '../utils/themeColors';
 import { uploadAdminPhoto, isAdminAuthError } from '../utils/cigapApi';
 import { formatWibNow, getReportPhotos } from '../utils/reportHelpers';

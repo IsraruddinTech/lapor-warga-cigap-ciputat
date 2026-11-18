@@ -13,7 +13,7 @@ import {
   Zap
 } from 'lucide-react';
 import { ReportItem, ThemeAccent } from '../types';
-import { CATEGORY_LABELS, REPORT_CATEGORIES_HIERARCHY } from '../data/mockReports';
+import { CATEGORY_LABELS, REPORT_CATEGORIES_HIERARCHY } from '../data/cigapConstants';
 import { getThemeColors } from '../utils/themeColors';
 
 interface StatsProps {

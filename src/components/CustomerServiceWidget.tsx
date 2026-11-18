@@ -14,7 +14,7 @@ import {
   Minimize2
 } from 'lucide-react';
 import { ChatMessage, ThemeAccent } from '../types';
-import { CS_TEMPLATES, MIN_CI_MASCOT_INFO } from '../data/mockReports';
+import { CS_TEMPLATES, MIN_CI_MASCOT_INFO } from '../data/cigapConstants';
 import { getThemeColors } from '../utils/themeColors';
 
 interface CSWidgetProps {

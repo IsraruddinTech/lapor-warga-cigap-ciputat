@@ -11,7 +11,7 @@ import {
   Inbox,
 } from 'lucide-react';
 import { ReportNotification } from '../types';
-import { STATUS_LABELS } from '../data/mockReports';
+import { STATUS_LABELS } from '../data/cigapConstants';
 
 interface NotificationCenterPopoverProps {
   isOpen: boolean;

@@ -13,7 +13,7 @@ import {
   RotateCw
 } from 'lucide-react';
 import { KelurahanCiputat, WeatherInfo } from '../types';
-import { CIPUTAT_KELURAHAN_LIST } from '../data/mockReports';
+import { CIPUTAT_KELURAHAN_LIST } from '../data/cigapConstants';
 
 interface SmartWeatherNotificationProps {
   weather: WeatherInfo;

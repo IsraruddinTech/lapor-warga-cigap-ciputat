@@ -11,7 +11,7 @@ import {
   UserFeedback,
   ReportNotification
 } from './types';
-import { INITIAL_REPORTS, INITIAL_NOTIFICATIONS, INITIAL_WEATHER_INFO } from './data/mockReports';
+import { INITIAL_REPORTS, INITIAL_NOTIFICATIONS, INITIAL_WEATHER_INFO } from './data/cigapConstants';
 import { Navbar } from './components/Navbar';
 import { DashboardView } from './components/DashboardView';
 import { CreateReportModal } from './components/CreateReportModal';

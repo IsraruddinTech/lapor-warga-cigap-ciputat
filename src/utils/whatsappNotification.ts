@@ -1,5 +1,5 @@
 import { ReportItem } from '../types';
-import { STATUS_LABELS } from '../data/mockReports';
+import { STATUS_LABELS } from '../data/cigapConstants';
 
 /**
  * Generates an official WhatsApp notification link from the CIGAP officer to the citizen reporter.

@@ -27,7 +27,7 @@ import {
   Bell
 } from 'lucide-react';
 import { ReportItem, ReportStatus, KelurahanCiputat, UserFeedback, ThemeAccent, ReportNotification } from '../types';
-import { STATUS_LABELS, CATEGORY_LABELS, CIPUTAT_KELURAHAN_LIST } from '../data/mockReports';
+import { STATUS_LABELS, CATEGORY_LABELS, CIPUTAT_KELURAHAN_LIST } from '../data/cigapConstants';
 import { AntiFraudInfoModal } from './AntiFraudInfoModal';
 import { BeforeAfterComparison } from './BeforeAfterComparison';
 import { DispositionLetterModal } from './DispositionLetterModal';

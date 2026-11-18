@@ -4,6 +4,7 @@ import type { NextFunction, Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { fileURLToPath } from 'url';
 import { INITIAL_NOTIFICATIONS, INITIAL_REPORTS, STATUS_LABELS } from './src/data/mockReports.ts';
 import type {
   PriorityHistoryEntry,
@@ -36,9 +37,12 @@ interface LoginAttemptRecord {
   lockedUntilMs: number;
 }
 
+const IS_VERCEL = Boolean(process.env.VERCEL);
 const PORT = Number(process.env.PORT) || 3000;
 const ROOT_DIR = process.cwd();
-const DATA_DIR = path.join(ROOT_DIR, 'data');
+const DATA_DIR =
+  process.env.CIGAP_DATA_DIR ||
+  (IS_VERCEL ? path.join('/tmp', 'cigap-data') : path.join(ROOT_DIR, 'data'));
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 const DB_FILE = path.join(DATA_DIR, 'cigap-db.json');
 const SESSIONS_FILE = path.join(DATA_DIR, 'cigap-sessions.json');
@@ -641,35 +645,37 @@ function buildStatusNotificationMessage(
   }
 }
 
-async function startServer() {
+export function createCigapServerApp(): express.Express {
   ensureDirectories();
   let db = loadDatabase();
   const adminSessions = loadSessionsFromDisk();
   const loginAttempts = new Map<string, LoginAttemptRecord>();
 
-  // Periodic cleanup of expired sessions & stale rate-limit records
-  setInterval(() => {
-    const now = Date.now();
-    let changed = false;
-    for (const [hash, sess] of adminSessions.entries()) {
-      if (sess.expiresAtMs <= now) {
-        adminSessions.delete(hash);
-        changed = true;
+  // Periodic cleanup of expired sessions & stale rate-limit records (long-running server only)
+  if (!IS_VERCEL) {
+    setInterval(() => {
+      const now = Date.now();
+      let changed = false;
+      for (const [hash, sess] of adminSessions.entries()) {
+        if (sess.expiresAtMs <= now) {
+          adminSessions.delete(hash);
+          changed = true;
+        }
       }
-    }
-    if (changed) {
-      try {
-        saveSessionsAtomic(adminSessions);
-      } catch {
-        // ignore cleanup error
+      if (changed) {
+        try {
+          saveSessionsAtomic(adminSessions);
+        } catch {
+          // ignore cleanup error
+        }
       }
-    }
-    for (const [ip, rec] of loginAttempts.entries()) {
-      if (rec.lockedUntilMs <= now && now - rec.windowStartMs > LOGIN_WINDOW_MS) {
-        loginAttempts.delete(ip);
+      for (const [ip, rec] of loginAttempts.entries()) {
+        if (rec.lockedUntilMs <= now && now - rec.windowStartMs > LOGIN_WINDOW_MS) {
+          loginAttempts.delete(ip);
+        }
       }
-    }
-  }, 10 * 60 * 1000).unref();
+    }, 10 * 60 * 1000).unref();
+  }
 
   const app = express();
   app.set('trust proxy', 1);
@@ -1574,6 +1580,12 @@ async function startServer() {
     }
   });
 
+  return app;
+}
+
+export async function startServer() {
+  const app = createCigapServerApp();
+
   // Vite middleware in dev, static dist in production
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
@@ -1595,7 +1607,17 @@ async function startServer() {
   });
 }
 
-startServer().catch((err) => {
-  console.error('Failed to start CIGAP server:', err);
-  process.exit(1);
-});
+const isMainModule = (() => {
+  try {
+    return path.resolve(process.argv[1] || '') === fileURLToPath(import.meta.url);
+  } catch {
+    return false;
+  }
+})();
+
+if (!IS_VERCEL && isMainModule) {
+  startServer().catch((err) => {
+    console.error('Failed to start CIGAP server:', err);
+    process.exit(1);
+  });
+}

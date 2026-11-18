@@ -12,7 +12,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { ReportItem, ThemeAccent } from '../types';
-import { STATUS_LABELS, CATEGORY_LABELS } from '../data/mockReports';
+import { STATUS_LABELS, CATEGORY_LABELS } from '../data/cigapConstants';
 import { getThemeColors } from '../utils/themeColors';
 import { getReportPhotos } from '../utils/reportHelpers';
 

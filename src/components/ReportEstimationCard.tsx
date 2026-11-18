@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { ReportItem } from '../types';
 import { getEstimationSummary } from '../utils/reportHelpers';
-import { STATUS_LABELS } from '../data/mockReports';
+import { STATUS_LABELS } from '../data/cigapConstants';
 
 interface ReportEstimationCardProps {
   report: ReportItem;

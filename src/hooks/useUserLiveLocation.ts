@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { KelurahanCiputat } from '../types';
-import { CIPUTAT_LANDMARKS } from '../data/mockReports';
+import { CIPUTAT_LANDMARKS } from '../data/cigapConstants';
 
 export type LocationPermissionState = 'prompt' | 'granted' | 'denied' | 'unsupported';
 

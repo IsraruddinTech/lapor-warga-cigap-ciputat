@@ -34,7 +34,7 @@ import {
   Lightbulb
 } from 'lucide-react';
 import { ReportItem, ReportCategory, KelurahanCiputat, ThemeAccent, ReportPhoto } from '../types';
-import { REPORT_CATEGORIES_HIERARCHY } from '../data/mockReports';
+import { REPORT_CATEGORIES_HIERARCHY } from '../data/cigapConstants';
 import { verifyReportAuthenticity } from '../utils/fakeReportVerifier';
 import { uploadReportPhoto, CreateReportPayload } from '../utils/cigapApi';
 import { formatWibNow } from '../utils/reportHelpers';

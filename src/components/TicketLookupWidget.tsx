@@ -16,7 +16,7 @@ import {
   Hourglass
 } from 'lucide-react';
 import { ReportItem, ThemeAccent } from '../types';
-import { STATUS_LABELS, STATUS_WORKFLOW_ORDER } from '../data/mockReports';
+import { STATUS_LABELS, STATUS_WORKFLOW_ORDER } from '../data/cigapConstants';
 import { getThemeColors } from '../utils/themeColors';
 import { getEstimationSummary } from '../utils/reportHelpers';
 import { generateCitizenShareWhatsAppUrl } from '../utils/whatsappNotification';

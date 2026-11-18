@@ -15,7 +15,7 @@ import {
   Globe
 } from 'lucide-react';
 import { KelurahanCiputat, ThemeAccent } from '../types';
-import { CIPUTAT_KELURAHAN_LIST, CIPUTAT_LANDMARKS } from '../data/mockReports';
+import { CIPUTAT_KELURAHAN_LIST, CIPUTAT_LANDMARKS } from '../data/cigapConstants';
 import { 
   useUserLiveLocation, 
   findNearestKelurahan, 

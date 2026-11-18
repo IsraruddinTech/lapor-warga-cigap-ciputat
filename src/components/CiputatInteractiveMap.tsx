@@ -28,7 +28,7 @@ import {
   Minimize2,
 } from 'lucide-react';
 import { ReportItem, ReportNotification, ReportStatus } from '../types';
-import { CATEGORY_LABELS, STATUS_LABELS } from '../data/mockReports';
+import { CATEGORY_LABELS, STATUS_LABELS } from '../data/cigapConstants';
 import { useUserLiveLocation } from '../hooks/useUserLiveLocation';
 import { fetchReportDetailById } from '../utils/cigapApi';
 import { getNotificationsForReport } from '../utils/reportHelpers';

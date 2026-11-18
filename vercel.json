@@ -1,7 +1,18 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "bun run build",
+  "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/api/(.*)",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/uploads/(.*)",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/((?!api/|uploads/).*)",
       "destination": "/index.html"
     }
   ]

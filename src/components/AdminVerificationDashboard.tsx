@@ -32,7 +32,7 @@ import {
   History
 } from 'lucide-react';
 import { ReportItem, ReportStatus, ThemeAccent, UrgencyLevel } from '../types';
-import { STATUS_LABELS, CATEGORY_LABELS } from '../data/mockReports';
+import { STATUS_LABELS, CATEGORY_LABELS } from '../data/cigapConstants';
 import { handleImageFallback } from '../utils/imageFallback';
 import { uploadAdminPhoto, isAdminAuthError } from '../utils/cigapApi';
 import { AntiFraudInfoModal } from './AntiFraudInfoModal';

@@ -35,7 +35,7 @@ import {
   STATUS_LABELS, 
   REPORT_CATEGORIES_HIERARCHY, 
   CategoryHierarchyItem 
-} from '../data/mockReports';
+} from '../data/cigapConstants';
 import { CiputatInteractiveMap } from './CiputatInteractiveMap';
 import { TicketLookupWidget } from './TicketLookupWidget';
 import { DispositionLetterModal } from './DispositionLetterModal';

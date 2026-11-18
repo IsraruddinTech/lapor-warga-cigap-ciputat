@@ -12,7 +12,7 @@ import {
   Inbox,
 } from 'lucide-react';
 import { ReportItem, ReportStatus } from '../types';
-import { STATUS_LABELS, STATUS_WORKFLOW_ORDER } from '../data/mockReports';
+import { STATUS_LABELS, STATUS_WORKFLOW_ORDER } from '../data/cigapConstants';
 
 interface ReportStatusTimelineProps {
   report: ReportItem;
